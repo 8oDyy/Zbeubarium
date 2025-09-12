@@ -1,41 +1,100 @@
-# Prerequisites
-*.d
+# --- OS / fichiers système ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Icon?
+._*
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
 *.so
-*.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
+# --- Environnements virtuels & outils ---
+.venv/
+venv/
+env/
+ENV/
+pip-wheel-metadata/
+pip-log.txt
+.python-version
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# --- Dépendances / empaquetage ---
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
 
-# Executables
-*.exe
-*.out
-*.app
+# --- Tests / qualité ---
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
 
-# debug information files
-*.dwo
+# --- Éditeurs / IDE ---
+.vscode/
+*.code-workspace
+.idea/
+*.iml
+.ropeproject/
+
+# --- Docs générées ---
+/site/
+docs/_build/
+
+# --- MicroPython / Pico ---
+*.mpy
+*.uf2
+*.hex
+*.bin
+mpy-cross
+.micropy/
+micropy.json
+typings/
+stubs/
+project.pymakr
+.pymakr/
+rshell_history.txt
+
+# --- Artefacts / synchro ---
+__deploy__/
+.sync/
+*.log
+
+# --- Secrets & configs locales ---
+secrets.py
+secrets*.py
+secrets.*
+*.env
+.env
+.env.*
+*.token
+id_*
+*.key
+*.pem
+*.p12
+*.cer
+*.crt
+*.der
+
+# --- Temp / caches divers ---
+*.swp
+*.swo
+*~
+*.tmp
+.tmp/
+.cache/
