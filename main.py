@@ -5,9 +5,14 @@ import machine
 import secrets
 from wifi import ensure_wifi
 from mqtt_client import MQTTClient
-import relay  # <-- nouveau module dédié aux relais
+import relay
+from hw080 import HW080Soil      # <-- module capteur humidité
+import ujson as json
 
 LED = machine.Pin("LED", machine.Pin.OUT)
+
+# Objet capteur (ADC0 = GP26)
+soil = HW080Soil(adc_pin=26, dry_raw=58000, wet_raw=30000)
 
 def blink(n=2, delay=0.1):
     for _ in range(n):
@@ -31,7 +36,7 @@ def make_on_msg(client):
     return on_msg
 
 def main():
-    # 0) Initialisation des relais (adapte les pins/active_low si besoin)
+    # 0) Initialisation des relais
     relay.init(pin1=16, pin2=17, active_low=True)
 
     # 1) Wi-Fi
@@ -71,7 +76,14 @@ def main():
         last_hello = time.ticks_ms()
         while True:
             if time.ticks_diff(time.ticks_ms(), last_hello) > 10000:
+                # Publication Hello World
                 client.publish(secrets.MQTT_TOPIC, "Hello World", retain=False)
+
+                # Publication humidité du sol
+                data = soil.measure()
+                client.publish(secrets.MQTT_STATE_TOPIC + "/soil", json.dumps(data))
+                print("Soil ->", data)
+
                 last_hello = time.ticks_ms()
                 blink(1, 0.05)
 
@@ -93,4 +105,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
