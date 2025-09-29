@@ -1,13 +1,17 @@
-# main.py — Wi-Fi, MQTT, commandes relais via MQTT (logique dans relay.py)
+# main.py — Wi-Fi, MQTT, commandes relais + Thermistor KY-013 (ADC GP27)
+
 import time
 import machine
+import ujson as json
 
 import secrets
 from wifi import ensure_wifi
 from mqtt_client import MQTTClient
-import relay  # <-- nouveau module dédié aux relais
+import relay
+from ky018_ldr import KY018LDR
 
 LED = machine.Pin("LED", machine.Pin.OUT)
+ldr = KY018LDR(adc_pin=27, label="zbeubarium-ldr", high_side=True)
 
 def blink(n=2, delay=0.1):
     for _ in range(n):
@@ -24,6 +28,7 @@ def make_on_msg(client):
             p = payload.decode().strip() if isinstance(payload, (bytes, bytearray)) else str(payload).strip()
 
             if relay.handle_cmd(p):  # on1/off1/on2/off2/on/off/status
+                # PUB: état relais sur topic dédié
                 client.publish(secrets.MQTT_STATE_TOPIC, relay.state_json(), retain=True)
                 blink(1, 0.03)
         except Exception as e:
@@ -64,19 +69,29 @@ def main():
         client.set_callback(make_on_msg(client))
         client.subscribe(secrets.MQTT_CMD_TOPIC)
 
-        # Etat initial (retained)
+        # Etat initial (retained) — état relais
         client.publish(secrets.MQTT_STATE_TOPIC, relay.state_json(), retain=True)
 
         # Boucle principale
-        last_hello = time.ticks_ms()
+        last_pub = time.ticks_ms()
+        period_ms = 10_000  # 10 s
+
         while True:
-            if time.ticks_diff(time.ticks_ms(), last_hello) > 10000:
+            now = time.ticks_ms()
+            if time.ticks_diff(now, last_pub) > period_ms:
+                # Heartbeat
                 client.publish(secrets.MQTT_TOPIC, "Hello World", retain=False)
-                last_hello = time.ticks_ms()
+
+                # Capteur thermistor (KY-013)
+                ldr_data = ldr.read()
+                client.publish(secrets.MQTT_STATE_TOPIC + "/light", json.dumps(ldr_data))
+                print("LDR ->", ldr_data)
+
+                last_pub = now
                 blink(1, 0.05)
 
             client.loop()       # keepalive (PING)
-            client.check_msg()  # traite les commandes entrantes
+            client.check_msg()  # commandes entrantes
             time.sleep(0.05)
 
     except (OSError, RuntimeError) as e:
@@ -93,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
