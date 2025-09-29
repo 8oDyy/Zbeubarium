@@ -13,6 +13,7 @@ _R2 = None
 def init(pin1: int = 16, pin2: int = 17, active_low: bool = True):
     """
     Initialise les deux relais. À appeler une seule fois au démarrage.
+
     """
     global _R1, _R2, _ACTIVE_LOW
     _ACTIVE_LOW = active_low
@@ -26,12 +27,12 @@ def _check_init():
         raise RuntimeError("relay.init() doit être appelé avant utilisation")
 
 # --- Commandes simples ---
-def rel1_on():   _check_init(); _R1.value(_on_value())
-def rel1_off():  _check_init(); _R1.value(_off_value())
-def rel2_on():   _check_init(); _R2.value(_on_value())
-def rel2_off():  _check_init(); _R2.value(_off_value())
-def both_on():   rel1_on(); rel2_on()
-def both_off():  rel1_off(); rel2_off()
+def lampe_on():   _check_init(); _R1.value(_on_value())
+def lampe_off():  _check_init(); _R1.value(_off_value())
+def pompe_on():   _check_init(); _R2.value(_on_value())
+def pompe_off():  _check_init(); _R2.value(_off_value())
+def both_on():   lampe_on(); pompe_on()
+def both_off():  lampe_off(); pompe_off()
 
 # --- État actuel ---
 def state_dict() -> dict:
@@ -60,10 +61,10 @@ def handle_cmd(cmd: str) -> bool:
     """
     _check_init()
     c = (cmd or "").strip().lower()
-    if   c == "on1":  rel1_on()
-    elif c == "off1": rel1_off()
-    elif c == "on2":  rel2_on()
-    elif c == "off2": rel2_off()
+    if   c == "on1":  lampe_on()
+    elif c == "off1": lampe_off()
+    elif c == "on2":  pompe_on()
+    elif c == "off2": pompe_off()
     elif c == "on":   both_on()
     elif c == "off":  both_off()
     elif c == "status":
