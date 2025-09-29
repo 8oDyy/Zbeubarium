@@ -1,4 +1,4 @@
-# main.py — Wi-Fi, MQTT, commandes relais via MQTT (logique dans relay.py)
+# main.py — Wi-Fi, MQTT, relais, humidité du sol + DHT11 sur GP15
 import time
 import machine
 
@@ -6,13 +6,16 @@ import secrets
 from wifi import ensure_wifi
 from mqtt_client import MQTTClient
 import relay
-from hw080 import HW080Soil      # <-- module capteur humidité
+from hw080 import HW080Soil
 import ujson as json
+
+from dht11_sensor import DHT11Sensor   # <-- AJOUT
 
 LED = machine.Pin("LED", machine.Pin.OUT)
 
-# Objet capteur (ADC0 = GP26)
+# Capteurs
 soil = HW080Soil(adc_pin=26, dry_raw=58000, wet_raw=30000)
+dht = DHT11Sensor(pin=15, label="zbeubarium-dht11")  # <-- DHT11 sur GP15
 
 def blink(n=2, delay=0.1):
     for _ in range(n):
@@ -73,22 +76,30 @@ def main():
         client.publish(secrets.MQTT_STATE_TOPIC, relay.state_json(), retain=True)
 
         # Boucle principale
-        last_hello = time.ticks_ms()
+        last_pub = time.ticks_ms()
+        period_ms = 10_000  # 10 s
+
         while True:
-            if time.ticks_diff(time.ticks_ms(), last_hello) > 10000:
-                # Publication Hello World
+            now = time.ticks_ms()
+            if time.ticks_diff(now, last_pub) > period_ms:
+                # Publication Hello
                 client.publish(secrets.MQTT_TOPIC, "Hello World", retain=False)
 
-                # Publication humidité du sol
-                data = soil.measure()
-                client.publish(secrets.MQTT_STATE_TOPIC + "/soil", json.dumps(data))
-                print("Soil ->", data)
+                # Sol
+                soil_data = soil.measure()
+                client.publish(secrets.MQTT_STATE_TOPIC + "/soil", json.dumps(soil_data))
+                print("Soil ->", soil_data)
 
-                last_hello = time.ticks_ms()
+                # DHT11 (T/H)
+                dht_data = dht.read()
+                client.publish(secrets.MQTT_STATE_TOPIC + "/dht11", json.dumps(dht_data))
+                print("DHT11 ->", dht_data)
+
+                last_pub = now
                 blink(1, 0.05)
 
             client.loop()       # keepalive (PING)
-            client.check_msg()  # traite les commandes entrantes
+            client.check_msg()  # commandes entrantes
             time.sleep(0.05)
 
     except (OSError, RuntimeError) as e:
